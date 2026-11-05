@@ -157,7 +157,15 @@ class JrxmlUI extends JFrame {
 
     public  void jrxmlViewer(String p1, String jsonContent, Component parentComponent) throws Exception{
        System.out.println("Compiling JRXML");
-       JasperReport jasperReport = JasperCompileManager.compileReport(p1);
+       String jrxmlContent = new String(Files.readAllBytes(Paths.get(p1)), StandardCharsets.UTF_8);
+
+// 2. Replace the absolute /images/ reference with your local resource path
+// (If your compiled build copies resources to the root, point it to the target folder or resources folder)
+       String fixedContent = jrxmlContent.replace("/imagenes/", "src/main/resources/images/");
+
+// 3. Compile dynamically from the modified stream
+       ByteArrayInputStream inputStream = new ByteArrayInputStream(fixedContent.getBytes(StandardCharsets.UTF_8));
+       JasperReport jasperReport = JasperCompileManager.compileReport(inputStream);
 
        System.out.println("Parsing JSON payload...");
       //dev/ String jsonContent = new String(Files.readAllBytes(new File(p2).toPath()));
@@ -282,7 +290,7 @@ class JrxmlUI extends JFrame {
             Document doc = dBuilder.parse(file);
             doc.getDocumentElement().normalize();
 
-            NodeList nList = doc.getElementsByTagName("ImageExpression");
+            NodeList nList = doc.getElementsByTagName("imageExpression");
 
             for (int temp = 0; temp < nList.getLength(); temp++) {
 
