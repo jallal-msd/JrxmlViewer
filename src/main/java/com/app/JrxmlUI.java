@@ -13,6 +13,7 @@ import java.util.Map;
 
 import javax.swing.BorderFactory;
 import javax.swing.JButton;
+import javax.swing.JComboBox;
 import javax.swing.JFileChooser;
 import javax.swing.JFrame;
 import javax.swing.JOptionPane;
@@ -37,12 +38,19 @@ import net.sf.jasperreports.engine.JasperFillManager;
 import net.sf.jasperreports.engine.JasperPrint;
 import net.sf.jasperreports.engine.JasperReport;
 import net.sf.jasperreports.engine.data.JRMapCollectionDataSource;
+import net.sf.jasperreports.engine.export.ooxml.JRDocxExporter;
+import net.sf.jasperreports.engine.export.ooxml.JRXlsxExporter;
+import net.sf.jasperreports.export.SimpleDocxExporterConfiguration;
+import net.sf.jasperreports.export.SimpleExporterInput;
+import net.sf.jasperreports.export.SimpleOutputStreamExporterOutput;
+import net.sf.jasperreports.export.SimpleXlsxReportConfiguration;
 
 class JrxmlUI extends JFrame {
 
     private JTextField  jrxmlPathField;
-    private JTextArea  jsonInput;
+    private JTextArea  jsonInput ;
     private String jsonData = "";
+    private String choice = "PDF";
 
     public JrxmlUI(){
         setTitle("JRXML Local Tester UI");
@@ -60,6 +68,17 @@ class JrxmlUI extends JFrame {
         jrxmlPathField.setEditable(false);
         topPanel.add(jrxmlPathField, BorderLayout.CENTER);
 
+       //options
+       //
+       String options[] = {"PDF", "DOC", "EXCEL"};
+       JComboBox<String> box = new JComboBox<>(options);
+
+       box.setSelectedItem("PDF");
+
+       box.addActionListener(e -> {
+           choice = (String) box.getSelectedItem();
+           System.out.println(choice);
+       });
 
 
         // --- Center Panel: JSON Payload Input ---
@@ -108,6 +127,7 @@ class JrxmlUI extends JFrame {
         JButton generateButton = new JButton("Generate Report PDF");
         generateButton.addActionListener(e -> generateReport(this));
         bottomPanel.add(generateButton);
+        bottomPanel.add(box);
 
         // Add to main frame
         add(topPanel, BorderLayout.NORTH);
@@ -158,10 +178,42 @@ class JrxmlUI extends JFrame {
        
        String jrxmlFileName = Paths.get(p1).getFileName().toString();
        String extractFileName[] = jrxmlFileName.split("\\.");
-       String outputPath = "exports/"+extractFileName[0]+"_output.pdf";
-       System.out.println("Exporting to pdf: " + outputPath );
+       String outputPath = "exports/"+extractFileName[0]+"_output";
+       System.out.println("Exporting to pdf: " + new String(outputPath+".pdf"));
 
-       JasperExportManager.exportReportToPdfFile(jasperPrint, outputPath );
+       switch (choice ) {
+       	case "PDF":
+                JasperExportManager.exportReportToPdfFile(jasperPrint, new String(outputPath+".pdf") );
+       		break;
+            case "DOC":
+                JRDocxExporter exporter = new JRDocxExporter();
+                exporter.setExporterInput(new SimpleExporterInput(jasperPrint));
+                exporter.setExporterOutput(new SimpleOutputStreamExporterOutput(new String(outputPath + ".docx")));
+
+                SimpleDocxExporterConfiguration configuration = new SimpleDocxExporterConfiguration();
+
+                exporter.setConfiguration(configuration);
+                exporter.exportReport();
+
+           
+
+                break;
+            case "EXCEL":
+                JRXlsxExporter export = new JRXlsxExporter();
+                export.setExporterInput(new SimpleExporterInput(jasperPrint));
+                export.setExporterOutput(new SimpleOutputStreamExporterOutput(outputPath+".xlsx"));
+                SimpleXlsxReportConfiguration configurationDoc =
+                                    new SimpleXlsxReportConfiguration();
+                configurationDoc.setOnePagePerSheet(false);
+                configurationDoc.setDetectCellType(true);
+                configurationDoc.setRemoveEmptySpaceBetweenRows(true);
+                configurationDoc.setRemoveEmptySpaceBetweenColumns(true);
+                export.setConfiguration(configurationDoc);
+                export.exportReport();
+                break;
+                default:
+                    break;
+            }
 
 
        System.out.println("Done! repot generated successfully.");
