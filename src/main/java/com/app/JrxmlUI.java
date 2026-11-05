@@ -165,7 +165,7 @@ class JrxmlUI extends JFrame {
 // 2. Replace the absolute /images/ reference with your local resource path
 // (If your compiled build copies resources to the root, point it to the target folder or resources folder)
        String fixedContent = jrxmlContent.replace("/imagenes/", "src/main/resources/images/");
-
+       fixedContent = fixedContent.replace("class=\"java.lang.Long\"", "class=\"java.lang.Integer\"");
 // 3. Compile dynamically from the modified stream
        ByteArrayInputStream inputStream = new ByteArrayInputStream(fixedContent.getBytes(StandardCharsets.UTF_8));
        JasperReport jasperReport = JasperCompileManager.compileReport(inputStream);
