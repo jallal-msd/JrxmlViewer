@@ -111,6 +111,10 @@ class JrxmlUI extends JFrame {
 
                 jsonInput.setText(jsonData);
 
+
+                //check image if exists
+                notifyImageMissing( selectedFile , this);
+
                 } catch (Exception ee) {
                 	ee.printStackTrace();
                 }
@@ -265,6 +269,67 @@ class JrxmlUI extends JFrame {
         }
 
         return map;
+    }
+
+    public List<String> extractFieldImages(File file, Component parentComponent) {
+
+        List<String> map = new ArrayList<>();
+
+        try {
+
+            DocumentBuilderFactory dbFactory = DocumentBuilderFactory.newInstance();
+            DocumentBuilder dBuilder = dbFactory.newDocumentBuilder();
+            Document doc = dBuilder.parse(file);
+            doc.getDocumentElement().normalize();
+
+            NodeList nList = doc.getElementsByTagName("ImageExpression");
+
+            for (int temp = 0; temp < nList.getLength(); temp++) {
+
+                Node node = nList.item(temp);
+                if (node.getNodeType() == Node.ELEMENT_NODE) {
+                    String expression = node.getTextContent().trim();
+
+                    expression = expression.replaceAll("<!\\[CDATA\\[(.*?)\\]\\]>", "$1").trim();
+                    map.add(expression);
+
+                }
+            }
+
+        } catch (Exception e) {
+            showErroMessage(e, parentComponent);
+        }
+
+        return map;
+    }
+
+    public void notifyImageMissing(File selectedFile, Component parentComponent) {
+        List<String> imageExpression = extractFieldImages(selectedFile, parentComponent);
+        List<String> missingImage = new ArrayList<>();
+
+        for (String expr : imageExpression) {
+            String cleanPath = expr.replace("\"", "").replace("'", "").trim();
+            File imagFile = new File(cleanPath);
+            if (!imagFile.exists()) {
+                missingImage.add(cleanPath);
+            }
+        }
+
+
+        if (!missingImage.isEmpty()) {
+            StringBuilder message = new StringBuilder("The following required images are missing:\n\n");
+        for (String img : missingImage) {
+            message.append(" - ").append(img).append("\n");
+        }
+        message.append("\nPlease create the folder and add the image(s) with the exact same name.");
+
+        JOptionPane.showMessageDialog(
+            this,
+            message.toString(),
+            "Missing Image Assets",
+            JOptionPane.WARNING_MESSAGE
+    );
+        }
     }
 
 
